@@ -76,16 +76,19 @@ impl State {
         State { mul: true, acc: 0 }
     }
 
-    fn execute(&mut self, instruction: &Instruction) {
+    fn execute(self, instruction: &Instruction) -> Self {
         match instruction {
-            Instruction::Do => self.mul = true,
-            Instruction::Mul(a, b) if self.mul => self.acc += a * b,
-            Instruction::DoNot => self.mul = false,
-            _ => {}
+            Instruction::Do => Self { mul: true, ..self },
+            Instruction::Mul(a, b) if self.mul => Self {
+                acc: self.acc + (a * b),
+                ..self
+            },
+            Instruction::DoNot => Self { mul: false, ..self },
+            _ => self,
         }
     }
 
-    fn result(&self) -> u32 {
+    fn result(self) -> u32 {
         self.acc
     }
 }
@@ -99,10 +102,7 @@ fn part1(input: &[Instruction]) -> u32 {
             Instruction::Mul(a, b) => Some(Instruction::Mul(*a, *b)),
             Instruction::DoNot => None,
         })
-        .fold(State::new(), |mut acc, i| {
-            acc.execute(&i);
-            acc
-        })
+        .fold(State::new(), |acc, i| acc.execute(&i))
         .result()
 }
 
@@ -110,9 +110,6 @@ fn part1(input: &[Instruction]) -> u32 {
 fn part2(input: &[Instruction]) -> u32 {
     input
         .iter()
-        .fold(State::new(), |mut acc, i| {
-            acc.execute(i);
-            acc
-        })
+        .fold(State::new(), |acc, i| acc.execute(i))
         .result()
 }
