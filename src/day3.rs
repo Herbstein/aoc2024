@@ -4,7 +4,7 @@ use aoc_runner_derive::{aoc, aoc_generator};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take, take_while_m_n},
-    combinator::{all_consuming, map, map_res},
+    combinator::{map, map_res},
     multi::{many1, many_till},
     sequence::{delimited, separated_pair},
     IResult,
@@ -17,11 +17,11 @@ enum Instruction {
 }
 
 fn from_dec(input: &str) -> Result<u32, ParseIntError> {
-    u32::from_str_radix(input, 10)
+    input.parse::<u32>()
 }
 
 fn is_dec_digit(c: char) -> bool {
-    c.is_digit(10)
+    c.is_ascii_digit()
 }
 
 fn mul_digit(input: &str) -> IResult<&str, u32> {
@@ -58,20 +58,22 @@ fn parse_empty(input: &str) -> IResult<&str, ()> {
 
 #[aoc_generator(day3)]
 fn input_generator(input: &str) -> Vec<Instruction> {
-    let (_, instructions) =
-        many1(map(many_till(parse_empty, parse_instruction), |(_, i)| i))(input).unwrap();
+    let mut parse_valid_instructions =
+        many1(map(many_till(parse_empty, parse_instruction), |(_, i)| i));
+
+    let (_, instructions) = parse_valid_instructions(input).unwrap();
 
     instructions
 }
 
-struct Flags {
+struct State {
     mul: bool,
     acc: u32,
 }
 
-impl Flags {
-    fn new() -> Flags {
-        Flags { mul: true, acc: 0 }
+impl State {
+    fn new() -> State {
+        State { mul: true, acc: 0 }
     }
 
     fn execute(&mut self, instruction: &Instruction) {
@@ -97,7 +99,7 @@ fn part1(input: &[Instruction]) -> u32 {
             Instruction::Mul(a, b) => Some(Instruction::Mul(*a, *b)),
             Instruction::DoNot => None,
         })
-        .fold(Flags::new(), |mut acc, i| {
+        .fold(State::new(), |mut acc, i| {
             acc.execute(&i);
             acc
         })
@@ -108,7 +110,7 @@ fn part1(input: &[Instruction]) -> u32 {
 fn part2(input: &[Instruction]) -> u32 {
     input
         .iter()
-        .fold(Flags::new(), |mut acc, i| {
+        .fold(State::new(), |mut acc, i| {
             acc.execute(i);
             acc
         })
